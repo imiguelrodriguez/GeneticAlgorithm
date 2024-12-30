@@ -447,7 +447,8 @@ class GeneticAlgorithm:
         job_times = [0] * len(jobs)
 
         machine_tasks = {i: [] for i in range(num_machines)}
-        task_colors = {0: 'tab:blue', 1: 'tab:red', 2: 'tab:green'}
+        default_colors = plt.cm.tab20.colors
+        task_colors = {i: default_colors[i % len(default_colors)] for i in range(20)}
 
         for job, operation in chromosome:
             machine, duration = jobs[job][operation]
@@ -480,7 +481,7 @@ class GeneticAlgorithm:
         ax.set_yticklabels([f"Machine {i}" for i in range(num_machines)])
         ax.set_xlabel("Time")
         ax.set_title("Gantt Chart for Job Shop Scheduling")
-        ax.invert_yaxis()  # Les màquines van de dalt cap avall
+        ax.invert_yaxis()
         plt.legend(loc='upper right')
         plt.show()
 
@@ -596,20 +597,4 @@ class GeneticAlgorithm:
                 self.fitness(individual, self.jobs)
 
 
-jobs = [
-    [(0, 3), (1, 2), (2, 2)],
-    [(0, 2), (2, 1), (1, 4)],
-    [(1, 4), (2, 3)]
-]
-ga = GeneticAlgorithm(
-    jobs,
-    population_size=10,
-    selection_method='rank',  # 'rank', 'tournament'
-    crossover_method='two_point',   # 'one_point' 'two_point'
-    mutation_method='independent'           # 'independent' 'one'
-)
-ga.main_loop()
-best_individuals = ga.elitism()
-print("🏆 Best Individual")
-for i, ind in enumerate(best_individuals):
-    print(f"Individual {i + 1}: Chromosome: {ind.chromosome}, Fitness: {ind.fitness}")
+
