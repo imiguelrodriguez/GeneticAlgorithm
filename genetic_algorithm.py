@@ -604,7 +604,7 @@ jobs = [
 ga = GeneticAlgorithm(
     jobs,
     population_size=10,
-    selection_method='tournament',  # 'rank', 'tournament'
+    selection_method='rank',  # 'rank', 'tournament'
     crossover_method='two_point',   # 'one_point' 'two_point'
     mutation_method='independent'           # 'independent' 'one'
 )
