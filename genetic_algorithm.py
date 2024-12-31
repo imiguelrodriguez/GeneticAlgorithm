@@ -423,7 +423,7 @@ class GeneticAlgorithm:
                 if job_counts[job] < len(jobs[job]):
                     chromosome.append((job, job_counts[job]))
                     job_counts[job] += 1
-            self.plot_gantt(chromosome, jobs)
+            #self.plot_gantt(chromosome, jobs)
             valid = True
 
         return chromosome
@@ -498,7 +498,7 @@ class GeneticAlgorithm:
 
         :raises ValueError: If invalid job or operation indices are detected.
         """
-        print(chromosome)
+        #print(chromosome)
         num_jobs = len(jobs)
         job_counts = [0] * num_jobs
 
