@@ -259,8 +259,8 @@ class GeneticAlgorithm:
 
         return child1, child2
 
+    """
     def mutation_one(self, individual, jobs, iterations=500):
-        """ AGAFAR UN GEN I EXTREURE'L I AFEGIRLO A UN ALTRE LLOC
         Apply single-point mutation to an individual, ensuring the order of operations remains valid.
 
         This mutation selects a random gene in the chromosome and replaces its operation with a new valid one.
@@ -273,7 +273,6 @@ class GeneticAlgorithm:
         :type iterations: int
 
         :raises ValueError: If the chromosome becomes invalid after mutation.
-        """
         chromosome = individual.chromosome[:]
 
         valid = False
@@ -296,10 +295,107 @@ class GeneticAlgorithm:
             return None
 
         return chromosome
+    """
 
-    def mutation_independent(self, individual, jobs, mutation_rate=0.3, iterations=1500):
-        """ PER TOTS ELS GENS DELS CROMOSOMES, ANEM MIRANT I SEGONS UNA PROBABILIDAD EL GEN AQUEST ES MOU O NO,
-        PERO TIPO EL ONE MUTATION, ES MOU A UN ALTRE LLOC I LA RESTA S'ADAPTEN A LA NOVA POSICIO DEL MUTAT
+    def mutation_one(self, individual, jobs, iterations=500):
+        """
+        Apply gene relocation mutation to an individual, ensuring the order of operations remains valid.
+
+        This mutation selects a random gene in the chromosome, removes it from its position,
+        and inserts it into another random position, adjusting the rest of the chromosome to remain valid.
+
+        :param individual: The individual to be mutated.
+        :type individual: Individual
+        :param jobs: List of jobs with their tasks (machine, duration).
+        :type jobs: list[list[tuple[int, int]]]
+        :param iterations: Number of iterations allowed to find a valid chromosome.
+        :type iterations: int
+
+        :raises ValueError: If the chromosome becomes invalid after mutation.
+        """
+        chromosome = individual.chromosome[:]
+
+        valid = False
+        iteration = 0
+        while not valid and iteration < iterations:
+            # Select a random index to remove a gene
+            remove_index = random.randint(0, len(chromosome) - 1)
+            gene_to_relocate = chromosome.pop(remove_index)
+
+            # Select a new random position to insert the gene
+            insert_index = random.randint(0, len(chromosome))
+            temp_chromosome = chromosome[:]
+            temp_chromosome.insert(insert_index, gene_to_relocate)
+
+            # Check if the modified chromosome is valid
+            if self.check_validity(temp_chromosome, jobs):
+                chromosome = temp_chromosome
+                valid = True
+            else:
+                # Restore the original chromosome if invalid
+                chromosome = individual.chromosome[:]
+
+            iteration += 1
+
+        if not valid:
+            return None
+
+        return chromosome
+
+
+def mutation_independent(self, individual, jobs, learning_threshold=0.5, mutation_rate=0.1, iterations=500):
+    """
+    Apply adaptive relocation mutation to each gene in an individual's chromosome.
+
+    Each gene is checked against a learning threshold. If the gene's learning factor is below the threshold, it is relocated
+    to another random position in the chromosome, adjusting the rest of the chromosome to remain valid. Otherwise, it remains in place.
+
+    :param individual: The individual to be mutated.
+    :type individual: Individual
+    :param jobs: List of jobs with their tasks (machine, duration).
+    :type jobs: list[list[tuple[int, int]]]
+    :param learning_threshold: Threshold for determining if a gene should be relocated (default: 0.5).
+    :type learning_threshold: float
+    :param mutation_rate: Probability of mutation for each gene (default: 0.1).
+    :type mutation_rate: float
+    :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+    :type iterations: int
+
+    :raises ValueError: If the chromosome becomes invalid after mutations.
+    """
+    chromosome = individual.chromosome[:]
+    valid = False
+    iteration = 0
+    while not valid and iteration < iterations:
+        mutated_chromosome = chromosome[:]
+        for index in range(len(mutated_chromosome)):
+            if random.random() < mutation_rate:
+                # Check if the gene's learning factor is below the threshold
+                learning_factor = individual.learning_factors[
+                    index]  # Assume individual has learning factors for each gene
+                if learning_factor < learning_threshold:
+                    # Relocate the gene to another position
+                    gene_to_relocate = mutated_chromosome.pop(index)
+                    new_position = random.randint(0, len(mutated_chromosome))
+                    mutated_chromosome.insert(new_position, gene_to_relocate)
+
+        # Check if the modified chromosome is valid
+        if self.check_validity(mutated_chromosome, jobs):
+            valid = True
+        else:
+            # Restore the original chromosome if invalid
+            mutated_chromosome = chromosome[:]
+
+        iteration += 1
+
+    if not valid:
+        return None
+
+    return mutated_chromosome
+
+    """
+    def mutation_independent(self, individual, jobs, mutation_rate=0.1, iterations=500):
+        
         Apply independent mutation to each gene in an individual's chromosome.
 
         Each gene has a probability (mutation_rate) of being mutated independently. Validity of the chromosome
@@ -315,7 +411,6 @@ class GeneticAlgorithm:
         :type iterations: int
 
         :raises ValueError: If the chromosome becomes invalid after mutations.
-        """
         chromosome = individual.chromosome[:]
         valid = False
         iteration = 0
@@ -339,6 +434,7 @@ class GeneticAlgorithm:
             return None
 
         return mutated_chromosome
+    """
 
     def elitism(self, num_top_individuals=2):
         """
@@ -553,7 +649,7 @@ class GeneticAlgorithm:
 
         return selected
 
-    def main_loop(self, num_generations=5000, convergence_generations=10, std_threshold=0.01):
+    def main_loop(self, num_generations=5, convergence_generations=10, std_threshold=0.01):
         """
         Execute the Genetic Algorithm main loop.
 
@@ -570,14 +666,10 @@ class GeneticAlgorithm:
                 ch1, ch2 = self.crossover(ind1, ind2)
                 if ch1 is None or ch2 is None:
                     continue
-                print(ch1, ch2)
+
                 # Mutation
                 self.mutate(ch1)
                 self.mutate(ch2)
-                print(ch1, ch2)
-
-                if ch1 is None or ch2 is None:
-                    continue
 
                 descendants.append(ch1)
                 descendants.append(ch2)
