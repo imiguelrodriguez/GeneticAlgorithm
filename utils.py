@@ -30,7 +30,7 @@ def load_dataset(filepath: str) -> list[list[tuple[int, int]]]:
     return jobs
 
 
-def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_point', mutation='independent',
+def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_point', mutation='independent', iterations=1500,
                   visualize=False):
     """
     Run the Genetic Algorithm with given parameters.
@@ -40,6 +40,7 @@ def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_poi
     :param selection: Selection method.
     :param crossover: Crossover method.
     :param mutation: Mutation method.
+    :param iterations: Number of iterations to avoid infinite loops.
     :param visualize: Boolean flag to plot results.
     """
     ga = GeneticAlgorithm(
@@ -47,7 +48,7 @@ def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_poi
         population_size=population_size,
         selection_method=selection,
         crossover_method=crossover,
-        mutation_method=mutation
+        mutation_method=mutation, iterations=iterations,
     )
     ga.main_loop()
     best_individuals = ga.elitism(num_top_individuals=10)
