@@ -1,61 +1,8 @@
 import random
 import matplotlib.pyplot as plt
 
-class Individual:
-    """
-       Represents an individual in the Genetic Algorithm population.
+from individual import Individual
 
-       :param chromosome: List of genes representing the individual's solution.
-       :type chromosome: list[tuple[int, int]]
-
-       **Attributes:**
-       - **chromosome** (*list[tuple[int, int]]*): The individual's chromosome.
-       - **fitness** (*float*): The fitness score of the individual.
-       """
-    def __init__(self, chromosome):
-        self._chromosome = chromosome
-        self._fitness = None
-
-    @property
-    def fitness(self):
-        """
-        Gets the fitness value of the individual.
-
-        :return: Fitness value.
-        :rtype: float
-        """
-        return self._fitness
-        return self._fitness
-
-    @fitness.setter
-    def fitness(self, value):
-        """
-        Sets the fitness value of the individual.
-
-        :param value: Fitness value.
-        :type value: float
-        """
-        self._fitness = value
-
-    @property
-    def chromosome(self):
-        """
-        Gets the chromosome of the individual.
-
-        :return: Chromosome.
-        :rtype: list[tuple[int, int]]
-        """
-        return self._chromosome
-
-    @chromosome.setter
-    def chromosome(self, value):
-        """
-        Sets the chromosome of the individual.
-
-        :param value: Chromosome.
-        :type value: list[tuple[int, int]]
-        """
-        self._chromosome = value
 
 class GeneticAlgorithm:
     """
@@ -401,7 +348,7 @@ class GeneticAlgorithm:
                 individuals.append(Individual(chromosome))
         return individuals
 
-    def generate_chromosome(self, jobs):
+    def generate_chromosome(self, jobs, iterations=500):
         """
         Generate a valid chromosome for the Job Shop Scheduling Problem.
 
@@ -410,6 +357,8 @@ class GeneticAlgorithm:
 
         :param jobs: List of jobs, where each job is a list of (machine, duration) pairs.
         :type jobs: list[list[tuple[int, int]]]
+        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :type iterations: int
         :return: A valid chromosome representing the sequence of job operations.
         :rtype: list[tuple[int, int]]
         """
@@ -417,12 +366,14 @@ class GeneticAlgorithm:
         chromosome = []
         job_counts = [0] * num_jobs
         valid = False
-        while not valid:
+        iteration = 0
+        while not valid and iteration < iterations:
             while len(chromosome) < sum(len(job) for job in jobs):
                 job = random.choice(range(num_jobs))  # Selection of random job
                 if job_counts[job] < len(jobs[job]):
                     chromosome.append((job, job_counts[job]))
                     job_counts[job] += 1
+                iteration += 1
             #self.plot_gantt(chromosome, jobs)
             valid = True
 
