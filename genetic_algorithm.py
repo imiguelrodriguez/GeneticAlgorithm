@@ -1,8 +1,7 @@
 import random
+import statistics
 import matplotlib.pyplot as plt
-
 from individual import Individual
-
 
 class GeneticAlgorithm:
     """
@@ -18,6 +17,10 @@ class GeneticAlgorithm:
        :type crossover_method: str, optional
        :param mutation_method: Mutation method ('one' or 'independent').
        :type mutation_method: str, optional
+       :param avg_fitness: List that tracks the average fitness of the individuals for each generation.
+       :type avg_fitness: list[float]
+       :param best_fitness: List that tracks the best fitness of the individuals for each generation.
+       :type best_fitness: list[int]
 
        **Methods:**
        - **fitness(individual, jobs)**: Calculate fitness for an individual.
@@ -42,6 +45,8 @@ class GeneticAlgorithm:
         self.selection_method = selection_method
         self.crossover_method = crossover_method
         self.mutation_method = mutation_method
+        self.avg_fitness = []
+        self.best_fitness = []
         for individual in self.population:
             self.fitness(individual, jobs)
 
@@ -103,16 +108,16 @@ class GeneticAlgorithm:
         :raises ValueError: If an invalid mutation method is specified.
         """
         if self.mutation_method == 'independent':
-            self.mutation_independent(individual, self.jobs)
+            individual.chromosome = self.mutation_independent(individual, self.jobs)
         elif self.mutation_method == 'one':
-            self.mutation_one(individual, self.jobs)
+            individual.chromosome = self.mutation_one(individual, self.jobs)
         else:
             raise ValueError("Invalid mutation method. Choose 'independent' or 'one'.")
 
 
     def fitness(self, individual, jobs):
         """
-        Calculate the fitness (makespan) on an individual and upadtes the fitness attribute of the class
+        Calculate the fitness (makespan) on an individual and updates the fitness attribute of the class
 
         :param individual: Object of the Individual class.
         :type individual: Individual
@@ -165,7 +170,7 @@ class GeneticAlgorithm:
         return repaired_chromosome
 
 
-    def crossover_twoPoint(self, parent1, parent2, jobs, n_iter=1):
+    def crossover_twoPoint(self, parent1, parent2, jobs, iterations=500):
         """
         Perform two-point crossover between two parents.
 
@@ -175,6 +180,8 @@ class GeneticAlgorithm:
         :type parent2: Individual
         :param jobs: List of jobs with tasks (machine, duration).
         :type jobs: list[list[tuple[int, int]]]
+        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :type iterations: int
         :return: Two offspring individuals.
         :rtype: tuple[Individual, Individual]
         """
@@ -186,8 +193,8 @@ class GeneticAlgorithm:
             raise ValueError("The chromosomes of both parents must be the same length")
 
         valid = False
-        iter = 0
-        while not valid and iter < n_iter:
+        iteration = 0
+        while not valid and iteration < iterations:
             # Select two random points
             point1, point2 = sorted(random.sample(range(length), 2))
 
@@ -199,7 +206,7 @@ class GeneticAlgorithm:
 
 
             valid = self.check_validity(child1_chromosome, jobs) and self.check_validity(child2_chromosome, jobs)
-            iter += 1
+            iteration += 1
         if not valid:
             return None, None
         # Create two new individuals
@@ -208,7 +215,7 @@ class GeneticAlgorithm:
 
         return child1, child2
 
-    def crossover_onePoint(self, parent1, parent2, jobs, n_iter=1):
+    def crossover_onePoint(self, parent1, parent2, jobs, iterations=500):
         """
         Perform one-point crossover between two parents.
 
@@ -218,6 +225,8 @@ class GeneticAlgorithm:
         :type parent2: Individual
         :param jobs: List of jobs with tasks (machine, duration).
         :type jobs: list[list[tuple[int, int]]]
+        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :type iterations: int
         :return: Two offspring individuals.
         :rtype: tuple[Individual, Individual]
         """
@@ -229,10 +238,10 @@ class GeneticAlgorithm:
             raise ValueError("The chromosomes of both parents must be the same length")
 
         valid = False
-        iter = 0
-        while not valid and iter < n_iter:
+        iteration = 0
+        while not valid and iteration < iterations:
             # Select one random point
-            point = random.randint(1, length -1 )
+            point = random.randint(1, length - 1)
 
             child1_chromosome = chromosome1[:point] + chromosome2[point:]
             child2_chromosome = chromosome2[:point] + chromosome1[point:]
@@ -241,7 +250,7 @@ class GeneticAlgorithm:
             child2_chromosome = self.repair_chromosome(child2_chromosome, jobs)
 
             valid = self.check_validity(child1_chromosome, jobs) and self.check_validity(child2_chromosome, jobs)
-            iter += 1
+            iteration += 1
         if not valid:
             return None, None
         # Create two new individuals
@@ -250,7 +259,7 @@ class GeneticAlgorithm:
 
         return child1, child2
 
-    def mutation_one(self, individual, jobs, mutation_rate=0.1):
+    def mutation_one(self, individual, jobs, iterations=500):
         """
         Apply single-point mutation to an individual, ensuring the order of operations remains valid.
 
@@ -260,32 +269,35 @@ class GeneticAlgorithm:
         :type individual: Individual
         :param jobs: List of jobs with their tasks (machine, duration).
         :type jobs: list[list[tuple[int, int]]]
-        :param mutation_rate: Probability of mutation occurring (default: 0.1).
-        :type mutation_rate: float
+        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :type iterations: int
 
         :raises ValueError: If the chromosome becomes invalid after mutation.
         """
         chromosome = individual.chromosome[:]
 
-        if random.random() < mutation_rate:
-            valid = False
-            while not valid:
-                index = random.randint(0, len(chromosome) - 1)
+        valid = False
+        iteration = 0
+        while not valid and iteration < iterations:
+            index = random.randint(0, len(chromosome) - 1)
 
-                job = chromosome[index][0]
-                possible_operations = list(range(len(jobs[job])))
-                new_operation = random.choice(possible_operations)
+            job = chromosome[index][0]
+            possible_operations = list(range(len(jobs[job])))
+            new_operation = random.choice(possible_operations)
 
-                temp_chromosome = chromosome[:]
-                temp_chromosome[index] = (job, new_operation)
+            temp_chromosome = chromosome[:]
+            temp_chromosome[index] = (job, new_operation)
 
-                if self.check_validity(temp_chromosome, jobs):
-                    chromosome = temp_chromosome
-                    valid = True
+            if self.check_validity(temp_chromosome, jobs):
+                chromosome = temp_chromosome
+                valid = True
+            iteration += 1
+        if not valid:
+            return None
 
-            individual.chromosome=chromosome
+        return chromosome
 
-    def mutation_independent(self, individual, jobs, mutation_rate=0.1):
+    def mutation_independent(self, individual, jobs, mutation_rate=0.1, iterations=500):
         """
         Apply independent mutation to each gene in an individual's chromosome.
 
@@ -298,15 +310,16 @@ class GeneticAlgorithm:
         :type jobs: list[list[tuple[int, int]]]
         :param mutation_rate: Probability of mutation for each gene (default: 0.1).
         :type mutation_rate: float
+        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :type iterations: int
 
         :raises ValueError: If the chromosome becomes invalid after mutations.
         """
         chromosome = individual.chromosome[:]
         valid = False
-
-        while not valid:
+        iteration = 0
+        while not valid and iteration < iterations:
             mutated_chromosome = chromosome[:]
-
             for index in range(len(mutated_chromosome)):
                 if random.random() < mutation_rate:
                     job = mutated_chromosome[index][0]
@@ -320,8 +333,11 @@ class GeneticAlgorithm:
 
             if self.check_validity(mutated_chromosome, jobs):
                 valid = True
+            iteration += 1
+        if not valid:
+            return None
 
-        individual.chromosome = mutated_chromosome
+        return mutated_chromosome
 
     def elitism(self, num_top_individuals=2):
         """
@@ -341,6 +357,25 @@ class GeneticAlgorithm:
         return top_individuals
 
     def generate_population(self, population_size, jobs):
+        """
+           Generate an initial population of individuals for the genetic algorithm.
+
+           Each individual in the population is represented by a valid chromosome,
+           which is a sequence of (job, operation) pairs. The method ensures that all
+           chromosomes are valid before adding them to the population.
+
+           :param population_size: The desired number of individuals in the population.
+           :type population_size: int
+           :param jobs: A list of jobs, where each job is a list of (machine, duration) pairs.
+                        For example, `jobs[i][j]` represents the machine and duration for
+                        the j-th operation of the i-th job.
+           :type jobs: list[list[tuple[int, int]]]
+           :return: A list of `Individual` objects representing the initial population.
+           :rtype: list[Individual]
+
+           :raises ValueError: If a valid chromosome cannot be generated after the maximum
+                               number of attempts (defined in `generate_chromosome`).
+        """
         individuals = []
         while len(individuals) < population_size:
             chromosome = self.generate_chromosome(jobs)
@@ -376,8 +411,10 @@ class GeneticAlgorithm:
                 iteration += 1
             #self.plot_gantt(chromosome, jobs)
             valid = True
-
-        return chromosome
+        if valid and iteration < iterations:
+            return chromosome
+        else:
+            return None
 
     def plot_gantt(self, chromosome, jobs):
         """
@@ -515,7 +552,7 @@ class GeneticAlgorithm:
 
         return selected
 
-    def main_loop(self, num_generations=5):
+    def main_loop(self, num_generations=5, convergence_generations=10, std_threshold=0.01):
         """
         Execute the Genetic Algorithm main loop.
 
@@ -547,5 +584,21 @@ class GeneticAlgorithm:
             for individual in self.population:
                 self.fitness(individual, self.jobs)
 
+            # Track best and average fitness
+            best_fitness_value = min(ind.fitness for ind in self.population)
+            avg_fitness_value = sum(ind.fitness for ind in self.population) / len(self.population)
 
+            self.best_fitness.append(best_fitness_value)
+            self.avg_fitness.append(avg_fitness_value)
 
+            # Check for stationary state
+            if len(self.avg_fitness) >= convergence_generations:
+                recent_fitness = self.avg_fitness[-convergence_generations:]
+                std_dev = statistics.stdev(recent_fitness)
+
+                print(f"Generation {generation}: Best Fitness = {best_fitness_value}, "
+                        f"Avg Fitness = {avg_fitness_value}, Std Dev = {std_dev}")
+
+                if std_dev < std_threshold:
+                    print(f"Stationary state reached at generation {generation}.")
+                    break
