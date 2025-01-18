@@ -52,3 +52,9 @@ class Individual:
         :type value: list[tuple[int, int]]
         """
         self._chromosome = value
+
+    def __str__(self):
+        chr = ""
+        for job in self._chromosome:
+            chr = chr + str(job)
+        return chr

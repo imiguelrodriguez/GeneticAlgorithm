@@ -260,7 +260,7 @@ class GeneticAlgorithm:
         return child1, child2
 
     def mutation_one(self, individual, jobs, iterations=500):
-        """
+        """ AGAFAR UN GEN I EXTREURE'L I AFEGIRLO A UN ALTRE LLOC
         Apply single-point mutation to an individual, ensuring the order of operations remains valid.
 
         This mutation selects a random gene in the chromosome and replaces its operation with a new valid one.
@@ -297,8 +297,9 @@ class GeneticAlgorithm:
 
         return chromosome
 
-    def mutation_independent(self, individual, jobs, mutation_rate=0.1, iterations=500):
-        """
+    def mutation_independent(self, individual, jobs, mutation_rate=0.3, iterations=1500):
+        """ PER TOTS ELS GENS DELS CROMOSOMES, ANEM MIRANT I SEGONS UNA PROBABILIDAD EL GEN AQUEST ES MOU O NO,
+        PERO TIPO EL ONE MUTATION, ES MOU A UN ALTRE LLOC I LA RESTA S'ADAPTEN A LA NOVA POSICIO DEL MUTAT
         Apply independent mutation to each gene in an individual's chromosome.
 
         Each gene has a probability (mutation_rate) of being mutated independently. Validity of the chromosome
@@ -552,7 +553,7 @@ class GeneticAlgorithm:
 
         return selected
 
-    def main_loop(self, num_generations=5, convergence_generations=10, std_threshold=0.01):
+    def main_loop(self, num_generations=5000, convergence_generations=10, std_threshold=0.01):
         """
         Execute the Genetic Algorithm main loop.
 
@@ -569,10 +570,14 @@ class GeneticAlgorithm:
                 ch1, ch2 = self.crossover(ind1, ind2)
                 if ch1 is None or ch2 is None:
                     continue
-
+                print(ch1, ch2)
                 # Mutation
                 self.mutate(ch1)
                 self.mutate(ch2)
+                print(ch1, ch2)
+
+                if ch1 is None or ch2 is None:
+                    continue
 
                 descendants.append(ch1)
                 descendants.append(ch2)
