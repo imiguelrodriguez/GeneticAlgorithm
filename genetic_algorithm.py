@@ -260,38 +260,44 @@ class GeneticAlgorithm:
         return child1, child2
 
     def mutation_one(self, individual, jobs, iterations=500):
-        """ AGAFAR UN GEN I EXTREURE'L I AFEGIRLO A UN ALTRE LLOC
-        Apply single-point mutation to an individual, ensuring the order of operations remains valid.
+        """Randomly selects a gene, removes it from its original position,
+        and reinserts it at a different location in the chromosome.
 
-        This mutation selects a random gene in the chromosome and replaces its operation with a new valid one.
+        Ensures that the order of operations remains valid after mutation.
 
         :param individual: The individual to be mutated.
         :type individual: Individual
         :param jobs: List of jobs with their tasks (machine, duration).
         :type jobs: list[list[tuple[int, int]]]
-        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
+        :param iterations: Number of iterations allowed to find a valid chromosome.
         :type iterations: int
 
-        :raises ValueError: If the chromosome becomes invalid after mutation.
+        :return: Mutated chromosome or None if a valid mutation cannot be found.
+        :rtype: list[tuple[int, int]] or None
         """
         chromosome = individual.chromosome[:]
 
         valid = False
         iteration = 0
         while not valid and iteration < iterations:
+            # Randomly select a gene index
             index = random.randint(0, len(chromosome) - 1)
 
-            job = chromosome[index][0]
-            possible_operations = list(range(len(jobs[job])))
-            new_operation = random.choice(possible_operations)
+            # Extract the gene
+            selected_gene = chromosome.pop(index)
 
-            temp_chromosome = chromosome[:]
-            temp_chromosome[index] = (job, new_operation)
+            # Randomly select a new position to insert the gene
+            new_position = random.randint(0, len(chromosome))
+            chromosome.insert(new_position, selected_gene)
 
-            if self.check_validity(temp_chromosome, jobs):
-                chromosome = temp_chromosome
+            # Check if the new chromosome is valid
+            if self.check_validity(chromosome, jobs):
                 valid = True
+            else:
+                # If invalid, revert changes and retry
+                chromosome = individual.chromosome[:]
             iteration += 1
+
         if not valid:
             return None
 
@@ -410,7 +416,6 @@ class GeneticAlgorithm:
                     chromosome.append((job, job_counts[job]))
                     job_counts[job] += 1
                 iteration += 1
-            #self.plot_gantt(chromosome, jobs)
             valid = True
         if valid and iteration < iterations:
             return chromosome
@@ -431,14 +436,23 @@ class GeneticAlgorithm:
 
         :raises ValueError: If the chromosome or jobs data is malformed.
         """
+        import matplotlib.pyplot as plt
+
+        # Number of machines
         num_machines = max(machine for job in jobs for machine, _ in job) + 1
+
+        # Initialize times for machines and jobs
         machine_times = [0] * num_machines
         job_times = [0] * len(jobs)
 
+        # Tasks per machine for plotting
         machine_tasks = {i: [] for i in range(num_machines)}
+
+        # Define colors for jobs
         default_colors = plt.cm.tab20.colors
         task_colors = {i: default_colors[i % len(default_colors)] for i in range(20)}
 
+        # Populate machine tasks from the chromosome
         for job, operation in chromosome:
             machine, duration = jobs[job][operation]
 
@@ -446,32 +460,40 @@ class GeneticAlgorithm:
             start_time = max(machine_times[machine], job_times[job])
             end_time = start_time + duration
 
-            machine_tasks[machine].append((start_time, duration, job))
+            # Store the task info: (start time, duration, job, operation)
+            machine_tasks[machine].append((start_time, duration, job, operation))
 
             # Update machine and job availability times
             machine_times[machine] = end_time
             job_times[job] = end_time
-        # Track jobs added to the legend
-        jobs_in_legend = set()
 
-        # Draw the Gantt chart
-        fig, ax = plt.subplots(figsize=(10, 6))
+        # Plotting the Gantt chart
+        fig, ax = plt.subplots(figsize=(22, 12))
+        jobs_in_legend = set()  # Keep track of jobs added to the legend
+
         for machine, tasks in machine_tasks.items():
-            for start, duration, job in tasks:
+            for start, duration, job, operation in tasks:
+                # Only add job label to legend once
                 label = f"Job {job}" if job not in jobs_in_legend else None
                 jobs_in_legend.add(job)
 
+                # Add a bar for the task
                 ax.barh(y=machine, width=duration, left=start, height=0.4,
                         color=task_colors[job], edgecolor='black', label=label)
+
+                # Add task details as text
                 ax.text(start + duration / 2, machine, f"job({job},{operation})",
                         ha='center', va='center', color='white', fontsize=8)
 
+        # Configure plot
         ax.set_yticks(range(num_machines))
         ax.set_yticklabels([f"Machine {i}" for i in range(num_machines)])
         ax.set_xlabel("Time")
         ax.set_title("Gantt Chart for Job Shop Scheduling")
-        ax.invert_yaxis()
-        plt.legend(loc='upper right')
+        ax.invert_yaxis()  # Invert y-axis for better visual alignment
+
+        # Add legend
+        ax.legend(loc='upper right')
         plt.show()
 
     def check_validity(self, chromosome, jobs):
@@ -553,7 +575,7 @@ class GeneticAlgorithm:
 
         return selected
 
-    def main_loop(self, num_generations=5000, convergence_generations=10, std_threshold=0.01):
+    def main_loop(self, num_generations=500, convergence_generations=3, std_threshold=9):
         """
         Execute the Genetic Algorithm main loop.
 
@@ -570,11 +592,11 @@ class GeneticAlgorithm:
                 ch1, ch2 = self.crossover(ind1, ind2)
                 if ch1 is None or ch2 is None:
                     continue
-                print(ch1, ch2)
                 # Mutation
                 self.mutate(ch1)
                 self.mutate(ch2)
-                print(ch1, ch2)
+                self.fitness(ch1, self.jobs)
+                self.fitness(ch2, self.jobs)
 
                 if ch1 is None or ch2 is None:
                     continue
@@ -584,10 +606,8 @@ class GeneticAlgorithm:
 
             # Etilism
             top_individuals = self.elitism()
-            self.population = top_individuals + self.population
-
-            for individual in self.population:
-                self.fitness(individual, self.jobs)
+            descendants = descendants + top_individuals
+            self.population = descendants
 
             # Track best and average fitness
             best_fitness_value = min(ind.fitness for ind in self.population)

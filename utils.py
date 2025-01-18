@@ -50,11 +50,12 @@ def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_poi
         mutation_method=mutation
     )
     ga.main_loop()
-    best_individuals = ga.elitism()
+    best_individuals = ga.elitism(num_top_individuals=10)
 
     print("🏆 Best Individuals")
     for i, ind in enumerate(best_individuals):
         print(f"Individual {i + 1}: Chromosome: {ind.chromosome}, Fitness: {ind.fitness}")
+    print(len(ga.population))
 
     if visualize:
         ga.plot_gantt(best_individuals[0].chromosome, jobs)
