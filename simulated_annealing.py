@@ -132,9 +132,13 @@ class SimulatedAnnealing:
         :return: Mutated chromosome.
         :rtype: list[tuple[int, int]]
         """
-        mutated_chromosome = chromosome[:]
-        i, j = random.sample(range(len(mutated_chromosome)), 2)
-        mutated_chromosome[i], mutated_chromosome[j] = mutated_chromosome[j], mutated_chromosome[i]
+        valid = False
+        while not valid:
+            mutated_chromosome = chromosome[:]
+            i, j = random.sample(range(len(mutated_chromosome)), 2)
+            mutated_chromosome[i], mutated_chromosome[j] = mutated_chromosome[j], mutated_chromosome[i]
+            if self.check_validity(mutated_chromosome, self.jobs):
+                valid = True
         return mutated_chromosome
 
     def acceptance_probability(self, current_fitness, new_fitness):
