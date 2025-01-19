@@ -5,7 +5,15 @@ from individual import Individual
 
 
 class SimulatedAnnealing:
-    def __init__(self, jobs, initial_temperature, cooling_rate, lower_t):
+    """
+    Simulated Annealing optimization for the Job Shop Scheduling Problem (JSSP).
+
+    This class implements a Simulated Annealing algorithm to optimize the makespan
+    of schedules for JSSP by iteratively refining solutions while balancing exploration
+    and exploitation through a temperature-based acceptance criterion.
+    """
+
+    def __init__(self, jobs, initial_temperature=100, cooling_rate=0.95, lower_t=0.001):
         """
         Initialize the Simulated Annealing optimization for JSSP.
 
@@ -15,8 +23,8 @@ class SimulatedAnnealing:
         :type initial_temperature: float
         :param cooling_rate: Rate at which the temperature decreases (0 < cooling_rate < 1).
         :type cooling_rate: float
-        :param iterations: Number of iterations per temperature level.
-        :type iterations: int
+        :param lower_t: Minimum temperature threshold to stop the algorithm.
+        :type lower_t: float
         """
         self.jobs = jobs
         self.temperature = initial_temperature
@@ -35,6 +43,14 @@ class SimulatedAnnealing:
     def generate_chromosome(self, jobs):
         """
         Generate a valid chromosome for the JSSP.
+
+        A chromosome is a sequence of (job, operation) pairs, ensuring that all
+        operations are included exactly once in a valid order.
+
+        :param jobs: List of jobs with tasks (machine, duration).
+        :type jobs: list[list[tuple[int, int]]]
+        :return: A valid chromosome.
+        :rtype: list[tuple[int, int]]
         """
         chromosome = []
         job_counts = [0] * len(jobs)
@@ -53,42 +69,44 @@ class SimulatedAnnealing:
         """
         Check if a chromosome is valid for the Job Shop Scheduling Problem.
 
+        Validity is ensured by checking that all operations are covered exactly
+        once in the correct order for each job.
+
         :param chromosome: List of (job, operation) pairs representing the chromosome.
         :type chromosome: list[tuple[int, int]]
         :param jobs: List of jobs with their tasks represented as (machine, duration) pairs.
         :type jobs: list[list[tuple[int, int]]]
         :return: True if the chromosome is valid, False otherwise.
         :rtype: bool
-
-        :raises ValueError: If invalid job or operation indices are detected.
         """
-        # print(chromosome)
         num_jobs = len(jobs)
         job_counts = [0] * num_jobs
 
         for job, operation in chromosome:
-            # Check if job index is within bounds
             if job < 0 or job >= num_jobs:
                 return False
-
-            # Check if operation index is within bounds
             if operation < 0 or operation >= len(jobs[job]):
                 return False
-
-            # Check if the operation follows the correct sequence
             if operation != job_counts[job]:
                 return False
-
             job_counts[job] += 1
 
-        # Verify all operations are covered exactly once
         if job_counts != [len(job) for job in jobs]:
             return False
 
         return True
+
     def fitness(self, individual, jobs):
         """
         Calculate the fitness (makespan) of an individual.
+
+        Fitness is computed as the makespan, which is the maximum time required
+        to complete all jobs on their assigned machines.
+
+        :param individual: The individual whose fitness is being calculated.
+        :type individual: Individual
+        :param jobs: List of jobs with their tasks (machine, duration).
+        :type jobs: list[list[tuple[int, int]]]
         """
         chromosome = individual.chromosome
         num_machines = max(machine for job in jobs for machine, _ in job) + 1
@@ -108,6 +126,11 @@ class SimulatedAnnealing:
     def mutate(self, chromosome):
         """
         Mutate a chromosome by randomly swapping two genes.
+
+        :param chromosome: Chromosome to mutate.
+        :type chromosome: list[tuple[int, int]]
+        :return: Mutated chromosome.
+        :rtype: list[tuple[int, int]]
         """
         mutated_chromosome = chromosome[:]
         i, j = random.sample(range(len(mutated_chromosome)), 2)
@@ -117,6 +140,13 @@ class SimulatedAnnealing:
     def acceptance_probability(self, current_fitness, new_fitness):
         """
         Calculate the acceptance probability for a new solution.
+
+        :param current_fitness: Fitness of the current solution.
+        :type current_fitness: float
+        :param new_fitness: Fitness of the new solution.
+        :type new_fitness: float
+        :return: Acceptance probability for the new solution.
+        :rtype: float
         """
         if new_fitness < current_fitness:
             return 1.0
@@ -126,35 +156,39 @@ class SimulatedAnnealing:
     def optimize(self):
         """
         Perform the Simulated Annealing optimization.
-        """
-        while self.temperature > self.lower_t:  # Stop when temperature is close to the threshold
 
-            # Generate a new solution
+        Iteratively refines the current solution by generating new solutions,
+        accepting them probabilistically based on temperature, and updating the
+        temperature after each step. Stops when the temperature falls below
+        the minimum threshold.
+
+        :return: The best solution found during the optimization.
+        :rtype: Individual
+        """
+        while self.temperature > self.lower_t:
             new_chromosome = self.mutate(self.current_solution.chromosome)
             new_solution = Individual(new_chromosome)
             self.fitness(new_solution, self.jobs)
 
-            # Decide whether to accept the new solution
             if random.random() < self.acceptance_probability(
                     self.current_solution.fitness, new_solution.fitness):
                 self.current_solution = new_solution
 
-            # Update the best solution found
             if self.current_solution.fitness < self.best_fitness:
                 self.best_solution = self.current_solution
                 self.best_fitness = self.current_solution.fitness
 
-            # Track the best fitness for plotting
             self.fitness_history.append(self.best_fitness)
-
-            # Cool down
             self.temperature *= self.cooling_rate
 
         return self.best_solution
 
     def plot_fitness(self):
         """
-        Plot the fitness over the iterations.
+        Plot the fitness (makespan) progression over the optimization process.
+
+        This visualization provides insights into how the algorithm converges
+        towards the best solution.
         """
         plt.plot(self.fitness_history)
         plt.xlabel("Temperature Steps")

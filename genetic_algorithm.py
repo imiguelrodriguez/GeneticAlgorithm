@@ -1,6 +1,5 @@
 import random
 import statistics
-import matplotlib.pyplot as plt
 from individual import Individual
 
 class GeneticAlgorithm:
@@ -315,10 +314,6 @@ class GeneticAlgorithm:
         :type individual: Individual
         :param jobs: List of jobs with their tasks (machine, duration).
         :type jobs: list[list[tuple[int, int]]]
-        :param mutation_rate: Probability of mutation for each gene (default: 0.1).
-        :type mutation_rate: float
-        :param iterations: Number of iterations allowed to find a valid chromosome. It prevents the run from getting stuck in infinite loops.
-        :type iterations: int
 
         :raises ValueError: If the chromosome becomes invalid after mutations.
         """
@@ -511,7 +506,6 @@ class GeneticAlgorithm:
 
         :raises ValueError: If invalid job or operation indices are detected.
         """
-        #print(chromosome)
         num_jobs = len(jobs)
         job_counts = [0] * num_jobs
 
@@ -583,6 +577,8 @@ class GeneticAlgorithm:
 
         :param num_generations: Number of generations to run the algorithm.
         :type num_generations: int
+        :param convergence_generations: Number of generations considered to compute convergence.
+        :type convergence_generations: int
         """
         for generation in range(num_generations):
             descendants = []
