@@ -80,6 +80,8 @@ Both GA and SA generate:
 ├── simulated_annealing.py      # Simulated Annealing implementation
 ├── utils.py                    # Utility functions for plotting and execution
 ├── individual.py               # Class representing a single solution
+├── tets_ga.ipnyb               # Notebook to test GA
+├── tests_sa.ipnyb              # Notebook to test SA
 └── README.md                   # Project documentation
 ```
 
