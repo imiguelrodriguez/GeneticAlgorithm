@@ -85,7 +85,7 @@ Both GA and SA generate:
 └── README.md                   # Project documentation
 ```
 
-## Gantt Diagram Examples
+## Gantt Diagram Example
 
 Below is an example Gantt chart generated for the **small dataset**:
 
@@ -98,6 +98,20 @@ jobs = [
 ``
 
 ![Gantt Diagram](gantt_example.png)
+
+## Simulated Annealing Diagram Example
+
+Below is an example how fitness decreases across rounds, for the **small dataset**:
+
+``
+jobs = [
+    [(0, 3), (1, 2), (2, 2)],
+    [(0, 2), (2, 1), (1, 4)],
+    [(1, 4), (2, 3)]
+]
+``
+
+![SA Diagram](sa_example.png)
 
 ## Authors
 [Ignacio Miguel Rodríguez](https://github.com/imiguelrodriguez) and
