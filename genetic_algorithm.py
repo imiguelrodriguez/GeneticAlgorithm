@@ -39,7 +39,7 @@ class GeneticAlgorithm:
     def __init__(self, jobs, population_size=10,
                  selection_method='rank',
                  crossover_method='one_point',
-                 mutation_method='independent', iterations=1500):
+                 mutation_method='independent', std_threshold=2, figsize=(12,7), iterations=1500):
         self.jobs = jobs
         self.iterations = iterations
         self.population_size = population_size
@@ -48,6 +48,8 @@ class GeneticAlgorithm:
         self.crossover_method = crossover_method
         self.mutation_method = mutation_method
         self.mutation_rate = 0.001
+        self.std_threshold = std_threshold
+        self.figsize = figsize
         self.avg_fitness = []
         self.best_fitness = []
         for individual in self.population:
@@ -468,7 +470,7 @@ class GeneticAlgorithm:
             job_times[job] = end_time
 
         # Plotting the Gantt chart
-        fig, ax = plt.subplots(figsize=(12, 7))
+        fig, ax = plt.subplots(figsize=self.figsize)
         jobs_in_legend = set()  # Keep track of jobs added to the legend
 
         for machine, tasks in machine_tasks.items():
@@ -575,7 +577,7 @@ class GeneticAlgorithm:
 
         return selected
 
-    def main_loop(self, num_generations=500, convergence_generations=5, std_threshold=2):
+    def main_loop(self, num_generations=500, convergence_generations=5):
         """
         Execute the Genetic Algorithm main loop.
 
@@ -625,6 +627,6 @@ class GeneticAlgorithm:
                 print(f"Generation {generation}: Best Fitness = {best_fitness_value}, "
                       f"Avg Fitness = {avg_fitness_value}, Std Dev = {std_dev}")
 
-                if std_dev < std_threshold:
+                if std_dev < self.std_threshold:
                     print(f"Stationary state reached at generation {generation}.")
                     break

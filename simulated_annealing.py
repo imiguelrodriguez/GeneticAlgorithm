@@ -5,7 +5,7 @@ from individual import Individual
 
 
 class SimulatedAnnealing:
-    def __init__(self, jobs, initial_temperature, cooling_rate, iterations):
+    def __init__(self, jobs, initial_temperature, cooling_rate, lower_t):
         """
         Initialize the Simulated Annealing optimization for JSSP.
 
@@ -21,7 +21,7 @@ class SimulatedAnnealing:
         self.jobs = jobs
         self.temperature = initial_temperature
         self.cooling_rate = cooling_rate
-        self.iterations = iterations
+        self.lower_t = lower_t
 
         # Generate an initial solution
         self.current_solution = Individual(self.generate_chromosome(jobs))
@@ -38,13 +38,54 @@ class SimulatedAnnealing:
         """
         chromosome = []
         job_counts = [0] * len(jobs)
-        while len(chromosome) < sum(len(job) for job in jobs):
-            job = random.choice(range(len(jobs)))
-            if job_counts[job] < len(jobs[job]):
-                chromosome.append((job, job_counts[job]))
-                job_counts[job] += 1
+        valid = False
+        while not valid:
+            while len(chromosome) < sum(len(job) for job in jobs):
+                job = random.choice(range(len(jobs)))
+                if job_counts[job] < len(jobs[job]):
+                    chromosome.append((job, job_counts[job]))
+                    job_counts[job] += 1
+            if self.check_validity(chromosome, jobs):
+                valid = True
         return chromosome
 
+    def check_validity(self, chromosome, jobs):
+        """
+        Check if a chromosome is valid for the Job Shop Scheduling Problem.
+
+        :param chromosome: List of (job, operation) pairs representing the chromosome.
+        :type chromosome: list[tuple[int, int]]
+        :param jobs: List of jobs with their tasks represented as (machine, duration) pairs.
+        :type jobs: list[list[tuple[int, int]]]
+        :return: True if the chromosome is valid, False otherwise.
+        :rtype: bool
+
+        :raises ValueError: If invalid job or operation indices are detected.
+        """
+        # print(chromosome)
+        num_jobs = len(jobs)
+        job_counts = [0] * num_jobs
+
+        for job, operation in chromosome:
+            # Check if job index is within bounds
+            if job < 0 or job >= num_jobs:
+                return False
+
+            # Check if operation index is within bounds
+            if operation < 0 or operation >= len(jobs[job]):
+                return False
+
+            # Check if the operation follows the correct sequence
+            if operation != job_counts[job]:
+                return False
+
+            job_counts[job] += 1
+
+        # Verify all operations are covered exactly once
+        if job_counts != [len(job) for job in jobs]:
+            return False
+
+        return True
     def fitness(self, individual, jobs):
         """
         Calculate the fitness (makespan) of an individual.
@@ -86,7 +127,7 @@ class SimulatedAnnealing:
         """
         Perform the Simulated Annealing optimization.
         """
-        while self.temperature > 1:  # Stop when temperature is close to 0
+        while self.temperature > self.lower_t:  # Stop when temperature is close to the threshold
 
             # Generate a new solution
             new_chromosome = self.mutate(self.current_solution.chromosome)

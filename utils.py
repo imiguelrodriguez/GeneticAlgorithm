@@ -1,4 +1,7 @@
+from IPython.core.pylabtools import figsize
+
 from genetic_algorithm import GeneticAlgorithm
+from simulated_annealing import SimulatedAnnealing
 
 
 def load_dataset(filepath: str) -> list[list[tuple[int, int]]]:
@@ -30,8 +33,8 @@ def load_dataset(filepath: str) -> list[list[tuple[int, int]]]:
     return jobs
 
 
-def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_point', mutation='independent', iterations=1500,
-                  visualize=False):
+def run_ga_algorithm(jobs, population_size=10, selection='rank', crossover='two_point', mutation='independent', iterations=1500,
+                  std_threshold=2, figsize=(12,7), visualize=False):
     """
     Run the Genetic Algorithm with given parameters.
 
@@ -49,6 +52,7 @@ def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_poi
         selection_method=selection,
         crossover_method=crossover,
         mutation_method=mutation, iterations=iterations,
+        std_threshold=std_threshold, figsize=figsize
     )
     ga.main_loop()
     best_individuals = ga.elitism(num_top_individuals=10)
@@ -60,3 +64,26 @@ def run_algorithm(jobs, population_size=10, selection='rank', crossover='two_poi
 
     if visualize:
         ga.plot_gantt(best_individuals[0].chromosome, jobs)
+
+def run_sa_algorithm(jobs, initial_temperature=100, cooling_rate=0.85, lower_t=0.01, visualize=True):
+    """
+        Run the Genetic Algorithm with given parameters.
+
+        :param jobs: Dataset of jobs.
+        :param initial_temperature: Initial temperature of the SA algorithm.
+        :param cooling_rate: Rate at which the temperature will decrease at each step.
+        :param crossover: Crossover method.
+        :param mutation: Mutation method.
+        :param iterations: Number of iterations to avoid infinite loops.
+        :param visualize: Boolean flag to plot results.
+        """
+    sa = SimulatedAnnealing(
+        jobs=jobs, initial_temperature=initial_temperature, cooling_rate=cooling_rate, lower_t=lower_t
+    )
+    best = sa.optimize()
+
+    print("🏆 Best fitness")
+    print(best)
+
+    if visualize:
+        sa.plot_fitness()

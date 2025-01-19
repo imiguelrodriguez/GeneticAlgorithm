@@ -57,4 +57,4 @@ class Individual:
         chr = ""
         for job in self._chromosome:
             chr = chr + str(job)
-        return chr
+        return chr + ", Fitness: " + str(self.fitness)
