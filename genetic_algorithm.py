@@ -560,7 +560,7 @@ class GeneticAlgorithm:
         sorted_population = sorted(population, key=lambda ind: ind.fitness)
 
         # Assign ranks
-        ranks = list(range(1, len(population) + 1))  # Rang 1 a N
+        ranks = list(range(len(population), 0, -1))  # N to 1
 
         # Calculate selection probabilities
         total_ranks = sum(ranks)
